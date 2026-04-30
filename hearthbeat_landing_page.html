@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hearthbeat - Local Network Presence Monitor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #101114;
+      --panel: #17191d;
+      --panel2: #1d2026;
+      --border: #30343c;
+      --green: #00ff88;
+      --green-dim: #00aa55;
+      --red: #ff3355;
+      --amber: #ffaa00;
+      --text: #c8cdd6;
+      --text-dim: #687080;
+      --text-bright: #f1f4f8;
+      --mono: 'Share Tech Mono', monospace;
+      --display: 'Barlow Condensed', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--display);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      padding: 22px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      color: var(--text-bright);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    .dots { display: flex; gap: 7px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.green { background: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.5); }
+    .dot.red { background: var(--red); }
+    .dot.amber { background: var(--amber); }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a, .btn {
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 12px;
+      color: var(--text-bright);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      text-decoration: none;
+      padding: 11px 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      border-color: rgba(0,255,136,0.35);
+      background: rgba(0,255,136,0.08);
+      color: var(--green);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 430px;
+      gap: 48px;
+      align-items: center;
+      padding: 72px 0 64px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      color: var(--green-dim);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-family: var(--display);
+      font-size: clamp(58px, 8vw, 104px);
+      line-height: 0.88;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      color: var(--text-bright);
+      margin-bottom: 22px;
+    }
+
+    .lead {
+      font-size: 24px;
+      line-height: 1.2;
+      max-width: 680px;
+      color: var(--text);
+      margin-bottom: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+    }
+
+    .small-note {
+      font-family: var(--mono);
+      color: var(--text-dim);
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 560px;
+    }
+
+    .phone-frame {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #1d2026, #111214);
+      padding: 16px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    }
+
+    .phone-frame img {
+      width: 100%;
+      display: block;
+      border: 1px solid #252a32;
+    }
+
+    .section {
+      padding: 56px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      font-family: var(--display);
+      font-size: clamp(34px, 5vw, 54px);
+      text-transform: uppercase;
+      color: var(--text-bright);
+      line-height: 1;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 22px;
+      min-height: 170px;
+    }
+
+    .card .num {
+      font-family: var(--mono);
+      color: var(--green);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card h3 {
+      font-size: 28px;
+      line-height: 1;
+      color: var(--text-bright);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .card p, .card li {
+      font-size: 18px;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    ul { list-style: none; display: grid; gap: 8px; }
+    li::before { content: '// '; color: var(--green-dim); font-family: var(--mono); }
+
+    .compat {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .callout {
+      border: 1px solid rgba(0,255,136,0.25);
+      background: rgba(0,255,136,0.06);
+      padding: 24px;
+    }
+
+    .callout p {
+      font-size: 22px;
+      line-height: 1.25;
+      color: var(--text-bright);
+      margin-bottom: 16px;
+    }
+
+    footer {
+      padding: 28px 0 42px;
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+      color: var(--text-dim);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; padding-top: 48px; }
+      .phone-frame { max-width: 430px; }
+      .grid { grid-template-columns: 1fr; }
+      .compat { grid-template-columns: 1fr; }
+      header { align-items: flex-start; flex-direction: column; }
+      .nav { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="dots"><span class="dot green"></span><span class="dot red"></span><span class="dot amber"></span></div>
+        Hearthbeat v1.0
+      </div>
+      <nav class="nav">
+        <a href="#how">How it works</a>
+        <a href="#requirements">Requirements</a>
+        <a href="#setup">Setup</a>
+        <a class="btn primary" href="https://haydenroy.gumroad.com/l/hearthbeat" target="_blank" rel="noopener">Buy on Gumroad</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">// local presence monitor</div>
+          <h1>See who is home using your WiFi</h1>
+          <p class="lead">Hearthbeat is a ready-to-flash Raspberry Pi image that scans your local network and shows which people are home based on their assigned devices.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="https://haydenroy.gumroad.com/l/hearthbeat" target="_blank" rel="noopener">Download v1.0</a>
+            <a class="btn" href="#setup">Read setup steps</a>
+          </div>
+          <p class="small-note">Runs locally. No cloud account. No subscription. Requires a Raspberry Pi, microSD card, and basic WiFi setup before first boot.</p>
+        </div>
+        <div class="phone-frame">
+          <img src="hearthbeatuiphone.jpg" alt="Hearthbeat running on a phone browser">
+        </div>
+      </section>
+
+      <section class="section" id="how">
+        <div class="section-head">
+          <h2>How it works</h2>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="num">01</div><h3>Flash</h3><p>Write the Hearthbeat image to a microSD card using Raspberry Pi Imager.</p></div>
+          <div class="card"><div class="num">02</div><h3>Connect</h3><p>Add your WiFi details to the boot partition, insert the card, and power on the Pi.</p></div>
+          <div class="card"><div class="num">03</div><h3>Assign</h3><p>Open the dashboard, assign detected devices to people, and monitor who is home.</p></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Features</h2>
+        </div>
+        <div class="grid">
+          <div class="card"><h3>Local only</h3><ul><li>No cloud dependency</li><li>No account required</li><li>Runs on your home network</li></ul></div>
+          <div class="card"><h3>Simple UI</h3><ul><li>Main presence view</li><li>Setup page for assigning devices</li><li>Multiple colour themes</li></ul></div>
+          <div class="card"><h3>Device based</h3><ul><li>ARP-based detection</li><li>Assign multiple devices per person</li><li>Presence updates automatically</li></ul></div>
+        </div>
+      </section>
+
+      <section class="section" id="requirements">
+        <div class="section-head">
+          <h2>Requirements</h2>
+        </div>
+        <div class="compat">
+          <div class="card"><h3>Compatible hardware</h3><ul><li>Raspberry Pi Zero 2W</li><li>Raspberry Pi 3B+</li><li>Raspberry Pi 4</li><li>16GB+ microSD card</li></ul></div>
+          <div class="card"><h3>You need</h3><ul><li>Home WiFi name and password</li><li>Phone or computer on same network</li><li>Correct power supply for your Pi model</li><li>Basic comfort flashing an SD card</li></ul></div>
+        </div>
+      </section>
+
+      <section class="section" id="setup">
+        <div class="section-head">
+          <h2>Setup summary</h2>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="num">A</div><h3>Download</h3><p>Get the Hearthbeat image file and setup guide.</p></div>
+          <div class="card"><div class="num">B</div><h3>Flash</h3><p>Use Raspberry Pi Imager, choose “Use custom”, and select the image.</p></div>
+          <div class="card"><div class="num">C</div><h3>Boot</h3><p>Add WiFi config to bootfs, boot the Pi, then open <strong>http://hearthbeat.local:5000</strong>.</p></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="callout">
+          <p>Hearthbeat v1.0 is for people who want a small, local, self-hosted presence dashboard without setting up Home Assistant or writing scripts.</p>
+          <a class="btn primary" href="https://haydenroy.gumroad.com/l/hearthbeat" target="_blank" rel="noopener">Buy on Gumroad</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>HEARTHBEAT v1.0</div>
+    </footer>
+  </div>
+</body>
+</html>
